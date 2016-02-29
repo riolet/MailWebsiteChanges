@@ -63,7 +63,7 @@ def toAbsoluteURIs(trees, baseuri):
 
 
 def parseSite(site):
-        file, content, titles, warning = None, None, None, None
+        file, content, titles, urls, warning = None, None, None, None, None
 
         uri = site['uri']
         contenttype = site.get('type', 'html')
@@ -132,10 +132,15 @@ def parseSite(site):
                                 contents = [contentresult]
                         else:
                                 contents = [etree.tostring(s, encoding=defaultEncoding, pretty_print=True).decode(defaultEncoding) for s in contentresult]
+
+                        urls = [getSubject(' '.join(s.xpath('.//a/@href'))) for s in titleresult]
+
                         if isinstance(titleresult, str):
                                 titles = [getSubject(titleresult)]
                         else:
                                 titles = [getSubject(' '.join(s.xpath('.//text()'))) for s in titleresult]
+
+                        print (urls, titles)
 
         except IOError as e:
                 warning = 'WARNING: could not open URL; maybe content was moved?\n\n' + str(e)
@@ -167,7 +172,7 @@ def parseSite(site):
                 if len(titles) == 0:
                         titles = [getSubject(c) for c in contents]
 
-        return {'contents': contents, 'titles': titles, 'warning': warning}
+        return {'contents': contents, 'titles': titles, 'warning': warning, 'urls': urls}
 
 
 # returns a short subject line
@@ -177,6 +182,12 @@ def getSubject(textContent):
         textContent = re.sub(' +', ' ', re.sub('\s', ' ', textContent)).strip()
         return (textContent[:maxTitleLength] + ' [..]') if len(textContent) > maxTitleLength else textContent
 
+# returns a short subject line
+def getURL(textContent):
+        if textContent == None or textContent == '':
+                return config.subjectPostfix
+        textContent = re.sub(' +', ' ', re.sub('\s', ' ', textContent)).strip()
+        return (textContent[:maxTitleLength] + ' [..]') if len(textContent) > maxTitleLength else textContent
 
 # generates a new RSS feed item
 def genFeedItem(subject, content, link, change):
@@ -289,12 +300,14 @@ def pollWebsites():
                                         changes += 1
 
                                         subject = '[' + site['shortname'] + '] ' + parseResult['titles'][i]
+                                        url = parseResult['urls'][i]
+
                                         print('    ' + subject)
                                         if config.enableMailNotifications and len(fileContents) > 0:
-                                                sendmail(receiver, subject, content, (site.get('type', 'html') == 'html'), site['uri'])
+                                                sendmail(receiver, subject, content, (site.get('type', 'html') == 'html'), url)
 
                                         if config.enableRSSFeed:
-                                                feedXML.xpath('//channel')[0].append(genFeedItem(subject, content, site['uri'], changes))
+                                                feedXML.xpath('//channel')[0].append(genFeedItem(subject, content, url, changes))
                                 i += 1
 
 
