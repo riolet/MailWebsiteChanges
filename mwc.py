@@ -140,8 +140,6 @@ def parseSite(site):
                         else:
                                 titles = [getSubject(' '.join(s.xpath('.//text()'))) for s in titleresult]
 
-                        print (urls, titles)
-
         except IOError as e:
                 warning = 'WARNING: could not open URL; maybe content was moved?\n\n' + str(e)
 
