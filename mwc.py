@@ -6,6 +6,7 @@
 import urllib.request, urllib.error, urllib.parse
 import urllib.parse
 from lxml import etree
+from lxml.etree import CDATA
 from cssselect import GenericTranslator
 import re
 import io
@@ -188,7 +189,7 @@ def getURL(textContent):
         return (textContent[:maxTitleLength] + ' [..]') if len(textContent) > maxTitleLength else textContent
 
 # generates a new RSS feed item
-def genFeedItem(subject, content, link, change):
+def genFeedItem(subject, description, link, fullcontent, change):
         feeditem = etree.Element('item')
         titleitem = etree.Element('title')
         titleitem.text = subject + ' #' + str(change)
@@ -197,7 +198,7 @@ def genFeedItem(subject, content, link, change):
         linkitem.text = link
         feeditem.append(linkitem)
         descriptionitem = etree.Element('description')
-        descriptionitem.text = content
+        descriptionitem.text = description
         feeditem.append(descriptionitem)
         guiditem = etree.Element('guid')
         guiditem.text = str(random.getrandbits(32))
@@ -205,6 +206,12 @@ def genFeedItem(subject, content, link, change):
         dateitem = etree.Element('pubDate')
         dateitem.text = strftime("%a, %d %b %Y %H:%M:%S %Z", time.localtime())
         feeditem.append(dateitem)
+
+        ns = {'dc': 'http://purl.org/dc/elements/1.1/', 'content': 'http://purl.org/rss/1.0/modules/content/'}
+        # content = etree.Element("{http://purl.org/rss/1.0/modules/content/}content")
+        encoded = etree.Element('{%s}encoded' % ns['content'])
+        encoded.text = CDATA(etree.tostring(fullcontent))
+        feeditem.append(encoded)
 
         return feeditem
 
@@ -264,6 +271,17 @@ def storeFileContents(shortname, parseResult):
                 i += 1
 
 
+def getContents(uri,fullcontentpath):
+    print (uri)
+    file = urllib.request.urlopen(uri)
+    print (file)
+    parser = etree.XMLParser(recover=True, encoding=defaultEncoding)
+    tree = etree.parse(file, parser)
+    content = tree.xpath(fullcontentpath)
+    return content
+
+
+
 def pollWebsites():
 
         # parse existing feed or create a new one
@@ -293,19 +311,21 @@ def pollWebsites():
                         changes = 0
                         fileContents = getFileContents(site['shortname'])
                         i = 0
-                        for content in parseResult['contents']:
-                                if content not in fileContents:
+                        for description in parseResult['contents']:
+                                if description not in fileContents:
                                         changes += 1
 
                                         subject = '[' + site['shortname'] + '] ' + parseResult['titles'][i]
                                         url = parseResult['urls'][i]
+                                        content = getContents(url, site['fullcontentpath'])[0]
+                                        print (site['fullcontentpath'], content)
 
                                         print('    ' + subject)
                                         if config.enableMailNotifications and len(fileContents) > 0:
-                                                sendmail(receiver, subject, content, (site.get('type', 'html') == 'html'), url)
+                                                sendmail(receiver, subject, description, (site.get('type', 'html') == 'html'), url)
 
                                         if config.enableRSSFeed:
-                                                feedXML.xpath('//channel')[0].append(genFeedItem(subject, content, url, changes))
+                                                feedXML.xpath('//channel')[0].append(genFeedItem(subject, description, url, content, changes))
                                 i += 1
 
 
