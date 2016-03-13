@@ -207,7 +207,7 @@ def genFeedItem(subject, description, link, fullcontent, change):
         dateitem.text = strftime("%a, %d %b %Y %H:%M:%S %Z", time.localtime())
         feeditem.append(dateitem)
 
-        if (fullcontent)
+        if fullcontent:
             ns = {'dc': 'http://purl.org/dc/elements/1.1/', 'content': 'http://purl.org/rss/1.0/modules/content/'}
             # content = etree.Element("{http://purl.org/rss/1.0/modules/content/}content")
             encoded = etree.Element('{%s}encoded' % ns['content'])
@@ -319,7 +319,7 @@ def pollWebsites():
 
                                         subject = '[' + site['shortname'] + '] ' + parseResult['titles'][i]
                                         url = parseResult['urls'][i]
-                                        if (site['fullcontentpath'])
+                                        if 'fullcontentpath' in site:
                                             content = getContents(url, site['fullcontentpath'])[0]
                                             print (site['fullcontentpath'], content)
 
