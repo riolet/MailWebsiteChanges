@@ -320,8 +320,11 @@ def pollWebsites():
                                         subject = '[' + site['shortname'] + '] ' + parseResult['titles'][i]
                                         url = parseResult['urls'][i]
                                         if 'fullcontentpath' in site:
-                                            content = getContents(url, site['fullcontentpath'])[0]
-                                            print (site['fullcontentpath'], content)
+                                            try:
+                                                content = getContents(url, site['fullcontentpath'])[0]
+                                                print (site['fullcontentpath'], content)
+                                            except:
+                                                pass
 
                                         print('    ' + subject)
                                         if config.enableMailNotifications and len(fileContents) > 0:
