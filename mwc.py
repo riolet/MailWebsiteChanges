@@ -207,11 +207,12 @@ def genFeedItem(subject, description, link, fullcontent, change):
         dateitem.text = strftime("%a, %d %b %Y %H:%M:%S %Z", time.localtime())
         feeditem.append(dateitem)
 
-        ns = {'dc': 'http://purl.org/dc/elements/1.1/', 'content': 'http://purl.org/rss/1.0/modules/content/'}
-        # content = etree.Element("{http://purl.org/rss/1.0/modules/content/}content")
-        encoded = etree.Element('{%s}encoded' % ns['content'])
-        encoded.text = CDATA(etree.tostring(fullcontent))
-        feeditem.append(encoded)
+        if (fullcontent)
+            ns = {'dc': 'http://purl.org/dc/elements/1.1/', 'content': 'http://purl.org/rss/1.0/modules/content/'}
+            # content = etree.Element("{http://purl.org/rss/1.0/modules/content/}content")
+            encoded = etree.Element('{%s}encoded' % ns['content'])
+            encoded.text = CDATA(etree.tostring(fullcontent))
+            feeditem.append(encoded)
 
         return feeditem
 
@@ -314,11 +315,13 @@ def pollWebsites():
                         for description in parseResult['contents']:
                                 if description not in fileContents:
                                         changes += 1
+                                        content = None
 
                                         subject = '[' + site['shortname'] + '] ' + parseResult['titles'][i]
                                         url = parseResult['urls'][i]
-                                        content = getContents(url, site['fullcontentpath'])[0]
-                                        print (site['fullcontentpath'], content)
+                                        if (site['fullcontentpath'])
+                                            content = getContents(url, site['fullcontentpath'])[0]
+                                            print (site['fullcontentpath'], content)
 
                                         print('    ' + subject)
                                         if config.enableMailNotifications and len(fileContents) > 0:
@@ -332,7 +335,7 @@ def pollWebsites():
                         if changes > 0:
                                 storeFileContents(site['shortname'], parseResult)
                                 print('        ' + str(changes) + ' updates')
- 
+
         # store feed
         if config.enableRSSFeed:
                 for o in feedXML.xpath('//channel/item[position()<last()-' + str(config.maxFeeds - 1) + ']'):
@@ -381,4 +384,3 @@ if __name__ == "__main__":
                 if mailsession:
                         mailsession.quit()
                         mailsession = None
-
