@@ -192,7 +192,7 @@ def getURL(textContent):
 def genFeedItem(subject, description, link, fullcontent, change):
         feeditem = etree.Element('item')
         titleitem = etree.Element('title')
-        titleitem.text = subject + ' #' + str(change)
+        titleitem.text = subject
         feeditem.append(titleitem)
         linkitem = etree.Element('link')
         linkitem.text = link
