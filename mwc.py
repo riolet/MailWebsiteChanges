@@ -113,7 +113,7 @@ def parseSite(site):
                         contentresult = tree.xpath(contentxpath) if contentxpath else []
                         titleresult = tree.xpath(titlexpath) if titlexpath else []
                         dateresult = tree.xpath(datexpath) if datexpath else []
-
+                        print ("Content Result",titleresult, contentresult, dateresult)
                         # translate relative URIs to absolute URIs
                         if contenttype == 'html':
                                 basetaglist = tree.xpath('/html/head/base')
@@ -148,6 +148,7 @@ def parseSite(site):
 
 
                         urls = [getSubject(' '.join(s.xpath('.//a/@href'))) for s in titleresult]
+
 
                         if isinstance(titleresult, str):
                                 titles = [getSubject(titleresult)]
@@ -337,7 +338,7 @@ def pollWebsites():
                                         content = None
                                         date = None
 
-                                        subject = '[' + site['shortname'] + '] ' + parseResult['titles'][i]
+                                        subject = parseResult['titles'][i]
                                         url = parseResult['urls'][i]
                                         date = parseResult['dates'][i]
                                         if 'fullcontentpath' in site:
