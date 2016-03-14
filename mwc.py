@@ -15,6 +15,7 @@ import smtplib
 from email.mime.text import MIMEText
 from email.header import Header
 from urllib.parse import urljoin
+from dateutil.parser import parse
 
 import os
 import sys
@@ -64,22 +65,27 @@ def toAbsoluteURIs(trees, baseuri):
 
 
 def parseSite(site):
-        file, content, titles, urls, warning = None, None, None, None, None
+        file, content, titles, dates, urls, warning = None, None, None, None, None, None
 
         uri = site['uri']
         contenttype = site.get('type', 'html')
         contentregex = site.get('contentregex', '')
         titleregex = site.get('titleregex', '')
+
         enc = site.get('encoding', defaultEncoding)
 
         contentxpath = site.get('contentxpath', '')
         if contentxpath == '' and site.get('contentcss', '') != '':
                 # CSS
                 contentxpath = GenericTranslator().css_to_xpath(site.get('contentcss'))
+
         titlexpath = site.get('titlexpath', '')
         if titlexpath == '' and site.get('titlecss', '') != '':
                 titlexpath = GenericTranslator().css_to_xpath(site.get('titlecss'))
 
+        datexpath = site.get('datexpath','')
+        if datexpath == '' and site.get('titlecss', '') != '':
+                datexpath = GenericTranslator().css_to_xpath(site.get('titlecss'))
         try:
 
                 if uri.startswith(cmdscheme):
@@ -106,6 +112,7 @@ def parseSite(site):
                         # xpath
                         contentresult = tree.xpath(contentxpath) if contentxpath else []
                         titleresult = tree.xpath(titlexpath) if titlexpath else []
+                        dateresult = tree.xpath(datexpath) if datexpath else []
 
                         # translate relative URIs to absolute URIs
                         if contenttype == 'html':
@@ -133,6 +140,12 @@ def parseSite(site):
                                 contents = [contentresult]
                         else:
                                 contents = [etree.tostring(s, encoding=defaultEncoding, pretty_print=True).decode(defaultEncoding) for s in contentresult]
+
+                        if isinstance(dateresult, str):
+                                dates = [dateresult]
+                        else:
+                                dates = [getSubject(' '.join(s.xpath('.//text()'))) for s in dateresult]
+
 
                         urls = [getSubject(' '.join(s.xpath('.//a/@href'))) for s in titleresult]
 
@@ -171,7 +184,7 @@ def parseSite(site):
                 if len(titles) == 0:
                         titles = [getSubject(c) for c in contents]
 
-        return {'contents': contents, 'titles': titles, 'warning': warning, 'urls': urls}
+        return {'contents': contents, 'titles': titles, 'warning': warning, 'urls': urls, 'dates':dates}
 
 
 # returns a short subject line
@@ -189,7 +202,7 @@ def getURL(textContent):
         return (textContent[:maxTitleLength] + ' [..]') if len(textContent) > maxTitleLength else textContent
 
 # generates a new RSS feed item
-def genFeedItem(subject, description, link, fullcontent, change):
+def genFeedItem(subject, description, link, fullcontent, date, change):
         feeditem = etree.Element('item')
         titleitem = etree.Element('title')
         titleitem.text = subject
@@ -213,6 +226,12 @@ def genFeedItem(subject, description, link, fullcontent, change):
             encoded = etree.Element('{%s}encoded' % ns['content'])
             encoded.text = CDATA(etree.tostring(fullcontent))
             feeditem.append(encoded)
+
+        if date:
+            print (date)
+            parsed_date =  parse(date).isoformat()
+            print (parsed_date)
+            dateitem.text = strftime("%a, %d %b %Y %H:%M:%S %Z", parsed_date)
 
         return feeditem
 
@@ -316,9 +335,11 @@ def pollWebsites():
                                 if description not in fileContents:
                                         changes += 1
                                         content = None
+                                        date = None
 
                                         subject = '[' + site['shortname'] + '] ' + parseResult['titles'][i]
                                         url = parseResult['urls'][i]
+                                        date = parseResult['dates'][i]
                                         if 'fullcontentpath' in site:
                                             try:
                                                 content = getContents(url, site['fullcontentpath'])[0]
@@ -331,7 +352,7 @@ def pollWebsites():
                                                 sendmail(receiver, subject, description, (site.get('type', 'html') == 'html'), url)
 
                                         if config.enableRSSFeed:
-                                                feedXML.xpath('//channel')[0].append(genFeedItem(subject, description, url, content, changes))
+                                                feedXML.xpath('//channel')[0].append(genFeedItem(subject, description, url, content, date, changes))
                                 i += 1
 
 
