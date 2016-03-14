@@ -231,7 +231,7 @@ def genFeedItem(subject, description, link, fullcontent, date, change):
             print (date)
             parsed_date =  parse(date).isoformat()
             print (parsed_date)
-            dateitem.text = strftime("%a, %d %b %Y %H:%M:%S %Z", parsed_date)
+            dateitem.text = parsed_date
 
         return feeditem
 
